@@ -69,7 +69,7 @@ def lstm(data, input_size, output_size, re_use=False, rnn_unit=10):
 
 
 # training function
-def train_lstm(data, input_size=7, output_size=1, learning_rate=0.001, batch_size=60, time_step=20, train_begin=0, train_end=5800):
+def train_lstm(data, input_size=7, output_size=1, learning_rate=0.001, batch_size=60, time_step=20, train_begin=0, train_end=5800, choice=0):
     X = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
     Y = tf.placeholder(tf.float32, shape=[None, time_step, output_size])
     batch_index, train_x, train_y = get_train_data(data, input_size, output_size, batch_size, time_step, train_begin, train_end)
@@ -77,16 +77,26 @@ def train_lstm(data, input_size=7, output_size=1, learning_rate=0.001, batch_siz
     loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
     train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
     saver = tf.train.Saver(tf.global_variables(), max_to_keep=15)
+    loss_res = []
+    mae_res = []
+    acc_res = []
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        for i in range(50):  # iterate times
+        for i in range(10):  # iterate times
             for step in range(len(batch_index) - 1):
                 _, loss_ = sess.run([train_op, loss], feed_dict={X: train_x[batch_index[step]:batch_index[step + 1]],
                                                                  Y: train_y[batch_index[step]:batch_index[step + 1]]})
             print("Number of iterations:", i, " loss:", loss_)
+            if choice == 0:
+                loss_res.append(loss_)
+                print("model_save: ", saver.save(sess, 'model_lstm/modle.ckpt'))  # save model
+                predict_lstm, test_y, acc_lstm, mae_lstm = prediction(data, input_size, output_size)
+                acc_res.append(acc_lstm)
+                mae_res.append(mae_lstm)
         print("model_save: ", saver.save(sess, 'model_lstm/modle.ckpt'))    # save model
         print("The train has finished")
+    return loss_res, acc_res, mae_res
 
 
 # prediction function

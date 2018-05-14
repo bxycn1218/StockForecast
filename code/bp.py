@@ -49,7 +49,7 @@ def bp(data, input_size, output_size, re_use=False, unit=10):
 
 
 # training function
-def train_bp(data, input_size=7, output_size=1, learning_rate=0.001, batch_size=60, train_begin=0, train_end=5800):
+def train_bp(data, input_size=7, output_size=1, learning_rate=0.001, batch_size=60, train_begin=0, train_end=5800, choice=0):
     batch_index, train_x, train_y = get_train_data(data, input_size, output_size, batch_size, train_begin, train_end)
     X = tf.placeholder(tf.float32, shape=[None, input_size])
     Y = tf.placeholder(tf.float32, shape=[None, output_size])
@@ -57,15 +57,26 @@ def train_bp(data, input_size=7, output_size=1, learning_rate=0.001, batch_size=
     train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss)  # optimize function
     # Add ops to save and restore all the variables
     saver = tf.train.Saver()
+    loss_res = []
+    acc_res = []
+    mae_res = []
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        for i in range(50):
+        for i in range(10):
             for step in range(len(batch_index) - 1):
                 _, loss_ = sess.run([train_op,loss], feed_dict={X: train_x[batch_index[step]:batch_index[step + 1]],
                                                          Y: train_y[batch_index[step]:batch_index[step + 1]]})
-                print("Number of iterations:", i, " loss:", loss_)
-        print("model_save: ", saver.save(sess, 'model_bp/model.ckpt'))    # save model
+            print("Number of iterations:", i, " loss:", loss_)
+            if choice == 0:
+                loss_res.append(loss_)
+                print("model_save: ", saver.save(sess, 'model_bp/model.ckpt'))  # save model
+                predict_bp, test_y, acc_bp, mae_bp = prediction(data, input_size, output_size)
+                acc_res.append(acc_bp)
+                mae_res.append(mae_bp)
+        print("model_save: ", saver.save(sess, 'model_bp/model.ckpt'))  # save model
         print("The train has finished")
+    return loss_res, acc_res, mae_res
 
 
 # prediction function
